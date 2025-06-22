@@ -75,7 +75,7 @@ gearScroll_1440p_100 := [2, 3, 6, 8, 10, 13, 15, 17]
 gearScroll_1440p_125 := [1, 3, 4, 6, 8, 9, 12, 12]
 
 ; http functions
-
+IniWrite, 1,              %settingsFile%, Main, %VERIFIED_KEY%
 SendDiscordMessage(webhookURL, message) {
 
     FormatTime, messageTime, , hh:mm:ss tt
