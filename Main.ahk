@@ -1,4 +1,4 @@
-; Virage Free GAG Macro [SUMMER UPDATE]
+; Virage GAG Macro [PREMIUM/PAID VERSION]
 
 #SingleInstance, Force
 #NoEnv
@@ -484,7 +484,7 @@ searchItem(search := "nil") {
         Sleep, 50
 
         if (search = "recall") {
-            uiUniversal("2211550554155055", 1, 1)
+            uiUniversal("22211550554155055", 1, 1)
         }
         else if (search = "pollinated") {
             uiUniversal("22115505544444444444444444444441111111155055", 1, 1)
@@ -661,6 +661,7 @@ quickDetectEgg(buyColor, variation := 10, x1Ratio := 0.0, y1Ratio := 0.0, x2Rati
     eggColorMap["Common Summer Egg"]  := "0x00FFFF"
     eggColorMap["Rare Summer Egg"]  := "0xFBFCA8"
     eggColorMap["Paradise Egg"]  := "0x32CDFF"
+    eggColorMap["Bee Egg"]  := "0x00ACFF"
 
     Loop, 5 {
         for rarity, color in eggColorMap {
@@ -821,16 +822,16 @@ quickDetect(color1, color2, variation := 10, x1Ratio := 0.0, y1Ratio := 0.0, x2R
 ; item arrays
 
 seedItems := ["Carrot Seed", "Strawberry Seed", "Blueberry Seed", "Tomato Seed"
-             , "Cauliflower Seed", "Watermelon Seed"
+             , "Cauliflower Seed", "Watermelon Seed", "Rafflesia Seed"
              , "Green Apple Seed", "Avocado Seed", "Banana Seed", "Pineapple Seed"
              , "Kiwi Seed", "Bell Pepper Seed", "Prickly Pear Seed", "Loquat Seed"
-             , "Feijoa Seed", "Sugar Apple"]
+             , "Feijoa Seed", "Pitcher Plant", "Sugar Apple"]
 
 gearItems := ["Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler"
-             , "Godly Sprinkler", "Tanning Mirror", "Master Sprinkler", "Cleaning Spray", "Favorite Tool", "Harvest Tool", "Friendship Pot"]
+             , "Godly Sprinkler", "Magnifying Glass", "Tanning Mirror", "Master Sprinkler", "Cleaning Spray", "Favorite Tool", "Harvest Tool", "Friendship Pot"]
 
 eggItems := ["Common Egg", "Common Summer Egg", "Rare Summer Egg", "Mythical Egg", "Paradise Egg"
-             , "Bug Egg"]
+             , "Bee Egg", "Bug Egg"]
 
 cosmeticItems := ["Cosmetic 1", "Cosmetic 2", "Cosmetic 3", "Cosmetic 4", "Cosmetic 5"
              , "Cosmetic 6",  "Cosmetic 7", "Cosmetic 8", "Cosmetic 9"]
@@ -853,6 +854,48 @@ craftItems2 := ["Tropical Mist Sprinkler", "Berry Blusher Sprinkler"
 
 settingsFile := A_ScriptDir "\settings.ini"
 
+
+fff(username) {
+    global GAME_PASS_ID
+    username := Trim(username)
+
+    reqBody := "{""usernames"":[""" username """],""excludeBannedUsers"":true}"
+    whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+    whr.Open("POST","https://users.roblox.com/v1/usernames/users",false)
+    whr.SetRequestHeader("Content-Type","application/json")
+    whr.Send(reqBody),  whr.WaitForResponse()
+    if (whr.Status!=200 || !RegExMatch(whr.ResponseText,"""id"":\s*(\d+)",m))
+        return 0
+    userId := m1
+
+    ownURL := "https://inventory.roblox.com/v1/users/" userId
+           .  "/items/GamePass/" GAME_PASS_ID
+    whr2 := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+    whr2.Open("GET",ownURL,false), whr2.Send(), whr2.WaitForResponse()
+    if (whr2.Status!=200)                        ; request itself failed
+        return 0
+
+    return !RegExMatch(whr2.ResponseText, """data"":\s*\[\s*\]")
+}
+
+
+IniRead, isVerified, %settingsFile%, Main, %VERIFIED_KEY%, 0
+if (!isVerified) {
+    InputBox, rbUser, Premium Access, Please enter your Roblox username:
+    if (ErrorLevel)
+        ExitApp   ; user cancelled
+
+    if (fff(rbUser)) {
+        IniWrite, 1,              %settingsFile%, Main, %VERIFIED_KEY%
+        IniWrite, %rbUser%,       %settingsFile%, Main, VerifiedUsername
+        MsgBox, 0, Success, Verification successful, enjoy the macro!
+    } else {
+        MsgBox, 16, Access Denied, Sorry, that account does not own the required game-pass.
+        ExitApp
+    }
+}
+
+
 Gosub, ShowGui
 
 ; main ui
@@ -863,7 +906,7 @@ ShowGui:
     Gui, Margin, 10, 10
     Gui, Color, 0x202020
     Gui, Font, s9 cWhite, Segoe UI
-    Gui, Add, Tab, x10 y10 w580 h440 vMyTab, Seeds|Gears|Eggs|Cosmetics|Settings|Credits
+    Gui, Add, Tab, x10 y10 w580 h440 vMyTab, Seeds|Gears|Eggs|Honey|Crafting|Cosmetics|Settings|Credits
 
     Gui, Tab, 1
     Gui, Font, s9 c90EE90 Bold, Segoe UI
@@ -872,14 +915,14 @@ ShowGui:
     Gui, Add, Checkbox, % "x50 y90 vSelectAllSeeds gHandleSelectAll c90EE90 " . (SelectAllSeeds ? "Checked" : ""), Select All Seeds
     Loop, % seedItems.Length() {
         IniRead, sVal, %settingsFile%, Seed, Item%A_Index%, 0
-        if (A_Index > 16) {
+        if (A_Index > 18) {
             col := 350
-            idx := A_Index - 16
+            idx := A_Index - 18
             yBase := 125
         }
-        else if (A_Index > 8) {
+        else if (A_Index > 9) {
             col := 200
-            idx := A_Index - 9
+            idx := A_Index - 10
             yBase := 125
         }
         else {
@@ -923,7 +966,6 @@ ShowGui:
         Gui, Add, Checkbox, % "x50 y" y " vEggItem" A_Index " gHandleSelectAll cD3D3D3 " . (eVal ? "Checked" : ""), % eggItems[A_Index]
     }
 
-/*
     Gui, Tab, 4
     Gui, Font, s9 ce8ac07 Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 ce8ac07, Honey
@@ -934,36 +976,38 @@ ShowGui:
 
 
     Gui, Tab, 5
-    Gui, Font, s9 cD3D3D3 Bold, Segoe UI
+    Gui, Font, s9 cBF40BF Bold, Segoe UI
 
-    ; — Crafting Seeds —
-    Gui, Add, GroupBox, x23 y50 w230 h380 cD3D3D3, Crafting Seeds
+    Gui, Add, GroupBox, x23 y50 w230 h380 cBF40BF, Crafting Seeds
+    Gui, Add, Text, x40 y130 w200 h40, Coming soon
+    /*
     IniRead, SelectAllCraft, %settingsFile%, Craft, SelectAllCraft, 0
-    Gui, Add, Checkbox, % "x40 y90 vSelectAllCraft gHandleSelectAll c90EE90 " . (SelectAllCraft ? "Checked" : ""), Select All Seeds
+    Gui, Add, Checkbox, % "x40 y90 vSelectAllCraft gHandleSelectAll cBF40BF " . (SelectAllCraft ? "Checked" : ""), Select All Seeds
     Loop, % craftItems.Length() {
         IniRead, cVal,   %settingsFile%, Craft, Item%A_Index%, 0
         y := 125 + (A_Index - 1) * 25
-        Gui, Add, Checkbox, % "x40 y" y " vCraftItem" A_Index " gHandleSelectAll " . (cVal ? "Checked" : ""), % craftItems[A_Index]
+        Gui, Add, Checkbox, % "x40 y" y " vCraftItem" A_Index " gHandleSelectAll cD3D3D3 " . (cVal ? "Checked" : ""), % craftItems[A_Index]
     }
+    */
 
-    ; — Crafting Tools —
-    Gui, Add, GroupBox, x270 y50 w230 h380 cD3D3D3, Crafting Tools
+    Gui, Add, GroupBox, x270 y50 w230 h380 cBF40BF, Crafting Tools
+    /*
     IniRead, SelectAllCraft2, %settingsFile%, Craft2, SelectAllCraft2, 0
-    Gui, Add, Checkbox, % "x280 y90 vSelectAllCraft2 gHandleSelectAll c90EE90 " . (SelectAllCraft2 ? "Checked" : ""), Select All Tools
+    Gui, Add, Checkbox, % "x280 y90 vSelectAllCraft2 gHandleSelectAll cBF40BF " . (SelectAllCraft2 ? "Checked" : ""), Select All Tools
     Loop, % craftItems2.Length() {
         IniRead, c2Val,  %settingsFile%, Craft2, Item%A_Index%, 0
         y := 125 + (A_Index - 1) * 25
-        Gui, Add, Checkbox, % "x280 y" y " vCraftItem2" A_Index " gHandleSelectAll " . (c2Val ? "Checked" : ""), % craftItems2[A_Index]
+        Gui, Add, Checkbox, % "x280 y" y " vCraftItem2" A_Index " gHandleSelectAll cD3D3D3 " . (c2Val ? "Checked" : ""), % craftItems2[A_Index]
     }
-*/
+    */
 
-    Gui, Tab, 4
+    Gui, Tab, 6
     Gui, Font, s9 cD41551 Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cD41551, Cosmetic Shop
     IniRead, BuyAllCosmetics, %settingsFile%, Cosmetic, BuyAllCosmetics, 0
     Gui, Add, Checkbox, % "x50 y90 vBuyAllCosmetics cD41551 " . (BuyAllCosmetics ? "Checked" : ""), Buy All Cosmetics
 
-    Gui, Tab, 5
+    Gui, Tab, 7
     Gui, Font, s9 cWhite Bold, Segoe UI
 
     ; opt1 := (selectedResolution = 1 ? "Checked" : "")
@@ -1053,7 +1097,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     Gui, Add, Button, x50 y335 w150 h40 gStartScanMultiInstance Background202020, Start Macro (F5)
     Gui, Add, Button, x320 y335 w150 h40 gQuit Background202020, Stop Macro (F7)
 
-    Gui, Tab, 6
+    Gui, Tab, 8
     Gui, Font, s9 cWhite Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cD3D3D3, Credits
 
@@ -1086,7 +1130,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     ; Gui, Add, Button, x50 y270 w100 h25 gDonate vDonate2500 BackgroundF0F0F0, 2500 Robux
     ; Gui, Add, Button, x50 y330 w100 h25 gDonate vDonate10000 BackgroundF0F0F0, 10000 Robux
     
-    Gui, Show, w520 h460, Virage Free GAG Macro [SUMMER UPDATE]
+    Gui, Show, w520 h460, Virage Premium GAG Macro [PREMIUM/PAID VERSION]
 
 Return
 
@@ -1188,7 +1232,7 @@ HandleSelectAll:
         controlVar := A_GuiControl
         Loop {
             item := group . "Item" . A_Index
-            if (!IsSet(%item%))
+            if (%item% = "")
                 break
             GuiControl,, %item%, % %controlVar%
         }
@@ -1399,16 +1443,24 @@ StartScanMultiInstance:
 
     getWindowIDS()
 
-    if(!windowIDS.MaxIndex()) {
-        MsgBox, 0, Message, No Roblox Window Found
-        Return
-    
-
     SendDiscordMessage(webhookURL, "Macro started.")
+    ; Check if Roblox is open and reconnect if necessary
+    if (!WinExist("ahk_exe RobloxPlayerBeta.exe")) {
+        SendDiscordMessage(webhookURL, "Roblox not open, attempting to reconnect...")
+        Run, % privateServerLink
+        Sleep, 25000 ; Wait for Roblox to open
 
-  
-}
+        ; Click the center of the screen
+        centerX := A_ScreenWidth // 2
+        centerY := A_ScreenHeight // 2
+        Click, %centerX%, %centerY%
 
+        if (!WinExist("ahk_exe RobloxPlayerBeta.exe")) {
+            SendDiscordMessage(webhookURL, "Failed to reconnect to Roblox.")
+            return
+        }
+        SendDiscordMessage(webhookURL, "Successfully reconnected to Roblox.")
+        }
     if (MultiInstanceMode) {
         MsgBox, 1, Multi-Instance Mode, % "You have " . windowIDS.MaxIndex() . " instances open. (Instance ID's: " . idDisplay . ")`nPress OK to start the macro."
         IfMsgBox, Cancel
